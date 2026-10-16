@@ -1,0 +1,1272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Kindred — Match by craft, not by looks</title>
+<link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" />
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  :root{
+    --paper:#F4EFE7; --card:#FFFFFF; --ink:#211D18; --muted:#79705F;
+    --accent:#B4552D; --accent-soft:#F3E3D8; --teal:#2E5B54; --teal-soft:#DDE9E6;
+    --line:#E7DED0; --gold:#C08A2E; --shadow:0 10px 30px rgba(48,38,26,.12);
+  }
+  html,body{ margin:0; height:100%; }
+  body{
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    background:
+      radial-gradient(1200px 600px at 15% 0%, #4a3d2f 0%, transparent 55%),
+      radial-gradient(1000px 700px at 100% 100%, #2f4038 0%, transparent 50%),
+      #241d16;
+    color:var(--ink); display:flex; align-items:center; justify-content:center;
+    min-height:100vh; padding:24px;
+  }
+  .disp{ font-family:'Fraunces',Georgia,serif; letter-spacing:-.01em; }
+
+  /* ---------- device ---------- */
+  .device{
+    width:430px; max-width:100%; height:900px; max-height:calc(100vh - 48px);
+    background:var(--paper); border-radius:40px; overflow:hidden; position:relative;
+    box-shadow:0 40px 90px rgba(0,0,0,.55), 0 0 0 10px #17120d, 0 0 0 12px #2b241c;
+    display:flex; flex-direction:column;
+  }
+  .statusbar{
+    height:34px; flex:none; display:flex; align-items:center; justify-content:space-between;
+    padding:0 22px; font-size:12px; font-weight:600; color:var(--ink); background:var(--paper);
+  }
+  .statusbar .dots{ display:flex; gap:4px; align-items:center; }
+  .statusbar .dots i{ width:5px;height:5px;border-radius:50%;background:var(--ink);opacity:.8;}
+  .screens{ flex:1; position:relative; overflow:hidden; }
+  .screen{
+    position:absolute; inset:0; display:none; flex-direction:column; background:var(--paper);
+  }
+  .screen.active{ display:flex; animation:fade .28s ease; }
+  @keyframes fade{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;} }
+  .scroll{ flex:1; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; }
+  .scroll::-webkit-scrollbar{ width:0; }
+
+  /* ---------- top bars ---------- */
+  .top{
+    flex:none; display:flex; align-items:center; gap:12px; padding:14px 18px 12px;
+    background:rgba(244,239,231,.9); backdrop-filter:blur(10px); position:sticky; top:0; z-index:20;
+    border-bottom:1px solid transparent;
+  }
+  .top.bordered{ border-bottom:1px solid var(--line); }
+  .brand{ font-size:22px; font-weight:700; }
+  .brand em{ color:var(--accent); font-style:normal; }
+  .top .grow{ flex:1; }
+  .iconbtn{
+    width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--card);
+    display:flex;align-items:center;justify-content:center; cursor:pointer; color:var(--ink);
+  }
+  .iconbtn:active{ transform:scale(.94); }
+  .back{ border:none; background:transparent; font-size:22px; cursor:pointer; color:var(--ink); padding:2px 6px; }
+  .title-sm{ font-weight:700; font-size:16px; }
+
+  /* ---------- feed ---------- */
+  .subtabs{ display:flex; gap:22px; padding:2px 18px 12px; font-size:14px; font-weight:600; }
+  .subtabs span{ color:var(--muted); cursor:pointer; padding-bottom:6px; border-bottom:2px solid transparent; }
+  .subtabs span.on{ color:var(--ink); border-color:var(--accent); }
+  .hero-note{
+    margin:0 16px 14px; padding:14px 16px; border-radius:16px; background:linear-gradient(120deg,#FBEDE2,#F1ECE2);
+    border:1px solid var(--line); font-size:13px; color:#5c5245; line-height:1.5;
+  }
+  .hero-note b{ color:var(--accent); }
+  .feed{ padding:0 16px 26px; display:flex; flex-direction:column; gap:20px; }
+
+  .card{
+    background:var(--card); border-radius:20px; overflow:hidden; box-shadow:var(--shadow);
+    border:1px solid var(--line);
+  }
+  .work-img{ width:100%; display:block; aspect-ratio:4/3; object-fit:cover; background:#ddd; cursor:pointer; }
+  .work-media{ position:relative; cursor:pointer; }
+  .work-media .badge{
+    position:absolute; top:12px; left:12px; background:rgba(20,15,10,.72); color:#fff;
+    font-size:11px; font-weight:600; padding:5px 10px; border-radius:999px; backdrop-filter:blur(4px);
+    display:flex; align-items:center; gap:6px;
+  }
+  .work-media .matchbadge{
+    position:absolute; top:12px; right:12px; background:var(--teal); color:#fff; font-size:11px;
+    font-weight:700; padding:5px 10px; border-radius:999px; display:flex; gap:5px; align-items:center;
+  }
+  .playbtn{
+    position:absolute; inset:0; margin:auto; width:62px; height:62px; border-radius:50%;
+    background:rgba(255,255,255,.92); display:flex; align-items:center; justify-content:center;
+    font-size:22px; color:var(--ink); box-shadow:0 8px 24px rgba(0,0,0,.35); pointer-events:none;
+  }
+  .cardbody{ padding:14px 16px 12px; }
+  .creator-row{ display:flex; align-items:center; gap:10px; cursor:pointer; }
+  .avatar{ width:38px;height:38px;border-radius:50%; object-fit:cover; background:#ccc; flex:none; border:2px solid #fff; box-shadow:0 2px 8px rgba(0,0,0,.15); }
+  .avatar.lg{ width:88px;height:88px;border-width:4px; }
+  .name-line{ display:flex; align-items:center; gap:6px; font-weight:700; font-size:14px; }
+  .name-line .city{ font-weight:400; color:var(--muted); font-size:12px; }
+  .role-sub{ font-size:12px; color:var(--muted); }
+  .verified{ color:var(--teal); font-size:12px; }
+
+  .card h3{ margin:12px 0 4px; font-size:19px; }
+  .work-desc{ font-size:13px; color:#5f574a; line-height:1.55; margin:6px 0 0; }
+  .tags{ display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+  .tag{ font-size:11px; font-weight:600; color:var(--teal); background:var(--teal-soft); padding:4px 9px; border-radius:999px; }
+  .tag.amber{ color:#8a5a12; background:#F6E7C9; }
+
+  .actions{ display:flex; align-items:center; gap:8px; margin-top:14px; padding-top:12px; border-top:1px solid var(--line); }
+  .iact{
+    display:flex; align-items:center; gap:6px; border:none; background:transparent; cursor:pointer;
+    font-size:13px; font-weight:600; color:var(--muted); padding:6px 8px; border-radius:10px; font-family:inherit;
+  }
+  .iact:hover{ background:#F7F2EA; }
+  .iact .heartic{ font-size:16px; }
+  .iact.appreciated{ color:var(--accent); }
+  .iact.grow{ flex:1; justify-content:flex-start; }
+
+  /* ---------- circle / shared layout ---------- */
+  .matchwrap{ padding:6px 18px 30px; }
+  .eyebrow{ font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); font-weight:700; }
+  .matchwrap h1{ font-size:30px; margin:8px 0 6px; line-height:1.1; }
+  .matchwrap p.lead{ color:var(--muted); font-size:14px; line-height:1.6; margin:0 0 18px; }
+  .duel{ display:flex; gap:12px; }
+  .duel .side{ flex:1; }
+  .duel .side .lbl{ font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:6px; }
+  .duel img{ width:100%; aspect-ratio:3/4; object-fit:cover; border-radius:16px; background:#ddd; box-shadow:var(--shadow); }
+  .duel .who{ font-size:12px; font-weight:600; margin-top:8px; }
+  .align{
+    display:flex; align-items:center; gap:12px; margin:18px 0; padding:14px; background:var(--card);
+    border-radius:16px; border:1px solid var(--line);
+  }
+  .ring{ width:62px;height:62px;border-radius:50%; flex:none;
+    background:conic-gradient(var(--accent) 0 92%, #EDE4D6 92% 100%);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .ring i{ width:48px;height:48px;border-radius:50%;background:var(--card);display:flex;align-items:center;justify-content:center;font-style:normal;font-weight:800;font-size:16px; }
+  .align .txt b{ font-size:15px; }
+  .align .txt div{ font-size:12.5px; color:var(--muted); margin-top:3px; line-height:1.5;}
+  .primary{
+    width:100%; border:none; background:var(--accent); color:#fff; font-weight:700; font-size:15px;
+    padding:16px; border-radius:16px; cursor:pointer; font-family:inherit; box-shadow:0 12px 24px rgba(180,85,45,.3);
+  }
+  .primary:active{ transform:scale(.99); }
+  .primary.teal{ background:var(--teal); box-shadow:0 12px 24px rgba(46,91,84,.28); }
+  .ghost{
+    width:100%; border:1px solid var(--line); background:var(--card); color:var(--ink); font-weight:600;
+    font-size:14px; padding:14px; border-radius:16px; cursor:pointer; margin-top:10px; font-family:inherit;
+  }
+  .steps{ margin-top:26px; }
+  .steps h4{ font-size:13px; text-transform:uppercase; letter-spacing:.1em; color:var(--muted); margin:0 0 12px; }
+  .step{ display:flex; gap:12px; padding:12px 0; border-bottom:1px dashed var(--line); }
+  .step:last-child{ border:none; }
+  .step .n{ width:26px;height:26px;border-radius:50%;background:var(--accent-soft);color:var(--accent);font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;flex:none; }
+  .step .t{ font-size:13.5px; line-height:1.5; }
+  .step .t b{ display:block; margin-bottom:2px; }
+
+  /* ---------- profile ---------- */
+  .cover{ position:relative; height:180px; }
+  .cover img{ width:100%;height:100%;object-fit:cover; }
+  .cover::after{ content:''; position:absolute; inset:0; background:linear-gradient(180deg,transparent 40%, rgba(30,24,17,.55)); }
+  .cover .name{ position:absolute; left:18px; bottom:14px; color:#fff; z-index:2; }
+  .cover .name h2{ margin:0; font-size:24px; }
+  .cover .name div{ font-size:12.5px; opacity:.9; }
+  .cover .back{ position:absolute; top:12px; left:12px; z-index:3; background:rgba(20,15,10,.5); color:#fff; border-radius:50%; width:36px;height:36px; }
+  .pro-head{ padding:0 18px; margin-top:-34px; position:relative; z-index:3; }
+  .pro-head .avatar{ box-shadow:0 6px 18px rgba(0,0,0,.3); }
+  .pro-meta{ display:flex; align-items:flex-end; justify-content:space-between; margin-top:8px;}
+  .pro-meta .r{ display:flex; gap:8px; }
+  .followbtn{ border:1px solid var(--ink); background:var(--ink); color:#fff; border-radius:999px; padding:9px 16px; font-weight:700; font-size:12.5px; cursor:pointer; font-family:inherit; }
+  .apprbtn{ border:1px solid var(--accent); background:#fff; color:var(--accent); border-radius:999px; padding:9px 16px; font-weight:700; font-size:12.5px; cursor:pointer; font-family:inherit; }
+  .apprbtn.on{ background:var(--accent); color:#fff; }
+  .tabsline{ display:flex; gap:20px; padding:16px 18px 0; border-bottom:1px solid var(--line); font-weight:600; font-size:13.5px;}
+  .tabsline span{ padding-bottom:10px; color:var(--muted); cursor:pointer; border-bottom:2px solid transparent; }
+  .tabsline span.on{ color:var(--ink); border-color:var(--accent); }
+
+  /* ---------- direct message ---------- */
+
+  .chatbody{ padding:16px 16px 8px; display:flex; flex-direction:column; gap:12px; }
+  .sys{ align-self:center; font-size:11.5px; color:var(--muted); background:#EFE8DC; padding:7px 12px; border-radius:999px; text-align:center; max-width:88%; line-height:1.4;}
+  .msg{ max-width:78%; padding:11px 14px; border-radius:16px; font-size:14px; line-height:1.5; }
+  .msg.them{ align-self:flex-start; background:#fff; border:1px solid var(--line); border-bottom-left-radius:4px; }
+  .msg.me{ align-self:flex-end; background:var(--teal); color:#fff; border-bottom-right-radius:4px; }
+  .msg .mini{ display:block; margin-top:8px; font-size:11px; opacity:.7; }
+
+  .actionchips{ display:flex; gap:8px; overflow-x:auto; padding:10px 16px; background:var(--paper); border-top:1px solid var(--line); }
+  .actionchips::-webkit-scrollbar{ height:0; }
+  .chip{
+    white-space:nowrap; border:1px solid var(--teal); color:var(--teal); background:#fff; font-weight:600;
+    font-size:12.5px; padding:9px 13px; border-radius:999px; cursor:pointer; font-family:inherit; flex:none;
+  }
+  .chip:active{ background:var(--teal-soft); }
+  .composer{ flex:none; display:flex; gap:8px; padding:10px 14px 14px; background:var(--paper); border-top:1px solid var(--line); }
+  .composer input{
+    flex:1; border:1px solid var(--line); background:#fff; border-radius:999px; padding:12px 16px;
+    font-size:14px; font-family:inherit; outline:none;
+  }
+  .composer button{ border:none; background:var(--accent); color:#fff; font-weight:700; border-radius:999px; padding:0 18px; cursor:pointer; font-family:inherit; }
+  .advancebar{ padding:10px 16px 4px; text-align:center; }
+
+  /* ---------- messages list ---------- */
+  .msglist{ padding:8px 16px 26px; }
+  .conv{ display:flex; gap:12px; align-items:center; padding:14px 6px; border-bottom:1px solid var(--line); cursor:pointer; }
+  .conv img{ width:52px;height:52px;border-radius:50%;object-fit:cover; }
+  .conv .c-body{ flex:1; min-width:0; }
+  .conv .c-top{ display:flex; justify-content:space-between; align-items:center; }
+  .conv .c-name{ font-weight:700; font-size:14.5px; }
+  .conv .c-time{ font-size:11px; color:var(--muted); }
+  .conv .c-last{ font-size:12.5px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:3px; }
+  .conv .c-stage{ font-size:10px; font-weight:700; color:var(--accent); background:var(--accent-soft); padding:3px 8px; border-radius:999px; margin-top:6px; display:inline-block; }
+
+  /* ---------- me ---------- */
+  .statgrid{ display:flex; gap:10px; padding:16px 18px; }
+  .stat{ flex:1; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:12px; text-align:center; }
+  .stat b{ display:block; font-size:18px; }
+  .stat span{ font-size:11px; color:var(--muted); }
+  .gallery{ columns:2; gap:10px; padding:0 18px 26px; }
+  .gallery .g{ break-inside:avoid; margin-bottom:10px; border-radius:14px; overflow:hidden; position:relative; cursor:pointer; box-shadow:var(--shadow); }
+  .gallery .g img{ width:100%; display:block; }
+  .gallery .g .cap{ position:absolute; left:0; right:0; bottom:0; padding:18px 10px 8px; color:#fff; font-size:11.5px; font-weight:600; background:linear-gradient(180deg,transparent,rgba(0,0,0,.6)); }
+
+  /* ---------- category tabs ---------- */
+  .cattabs{ flex:none; display:flex; gap:8px; overflow-x:auto; padding:4px 16px 12px; background:var(--paper); border-bottom:1px solid var(--line); }
+  .cattabs::-webkit-scrollbar{ height:0; }
+  .cattabs button{
+    white-space:nowrap; flex:none; border:1px solid var(--line); background:#fff; color:var(--muted);
+    font-weight:600; font-size:12.5px; padding:8px 14px; border-radius:999px; cursor:pointer; font-family:inherit;
+  }
+  .cattabs button.on{ background:var(--ink); border-color:var(--ink); color:#fff; }
+
+  /* ---------- spotlight (one creator at a time) ---------- */
+  .spotlight{ background:var(--card); border-radius:22px; overflow:hidden; box-shadow:var(--shadow); border:1px solid var(--line); }
+  .spot-media{ position:relative; cursor:pointer; }
+  .spot-media img{ width:100%; display:block; aspect-ratio:4/3; object-fit:cover; background:#ddd; }
+  .spot-media .cat{ position:absolute; top:12px; left:12px; background:rgba(20,15,10,.7); color:#fff; font-size:11px; font-weight:600; padding:6px 11px; border-radius:999px; backdrop-filter:blur(4px); }
+  .spot-media .pct{ position:absolute; left:12px; bottom:12px; background:var(--teal); color:#fff; font-size:11px; font-weight:800; padding:6px 11px; border-radius:999px; }
+  .spot-media .expand{ position:absolute; bottom:12px; right:12px; background:rgba(20,15,10,.6); color:#fff; font-size:11px; font-weight:600; padding:6px 11px; border-radius:999px; }
+  .spot-head{ display:flex; align-items:center; gap:10px; }
+  .spot-head .creator-row{ flex:1; min-width:0; }
+  .nextmini{
+    flex:none; border:1px solid var(--line); background:#fff; color:var(--ink); font-weight:700; font-size:12.5px;
+    padding:8px 6px 8px 14px; border-radius:999px; cursor:pointer; font-family:inherit; display:flex; align-items:center; gap:5px;
+    box-shadow:var(--shadow);
+  }
+  .nextmini:active{ transform:scale(.95); }
+  .nextmini span{ font-size:14px; color:var(--accent); }
+  .spot-body{ padding:16px 18px 18px; }
+  .spot-body h2{ font-size:23px; margin:12px 0 6px; }
+  .spot-body .desc{ font-size:13.5px; color:#4a4236; line-height:1.55; }
+  .spot-body audio{ width:100%; margin-top:12px; border-radius:10px; }
+  .spot-actions{ display:flex; gap:10px; margin-top:16px; }
+  .spot-actions .go{
+    flex:1; border:none; background:var(--accent); color:#fff; font-weight:700; font-size:15px; padding:15px;
+    border-radius:14px; cursor:pointer; font-family:inherit; display:flex; align-items:center; justify-content:center; gap:8px;
+    box-shadow:0 12px 24px rgba(180,85,45,.28);
+  }
+  .spot-actions .go:active{ transform:scale(.99); }
+  .spot-actions .ic{
+    width:54px; flex:none; border-radius:14px; border:1px solid var(--line); background:#fff; cursor:pointer;
+    font-size:18px; color:var(--ink); display:flex; align-items:center; justify-content:center;
+  }
+  .spot-actions .ic.appreciated{ color:var(--accent); border-color:var(--accent); background:var(--accent-soft); }
+  .spot-progress{ display:flex; align-items:center; gap:10px; margin-top:14px; font-size:12px; color:var(--muted); font-weight:600; }
+  .spot-progress .pbar{ flex:1; height:5px; border-radius:3px; background:#EAE1D3; overflow:hidden; }
+  .spot-progress .pfill{ height:100%; background:var(--accent); border-radius:3px; transition:width .3s; }
+  .upnext{ display:flex; align-items:center; gap:8px; margin-top:16px; overflow-x:auto; padding-bottom:2px; }
+  .upnext::-webkit-scrollbar{ height:0; }
+  .upnext .un-label{ font-size:11.5px; color:var(--muted); font-weight:600; flex:none; margin-right:2px; }
+  .upnext img{ width:40px; height:40px; border-radius:50%; object-fit:cover; border:2px solid #fff; box-shadow:var(--shadow); cursor:pointer; opacity:.7; flex:none; }
+  .upnext img.on{ outline:2px solid var(--accent); outline-offset:2px; opacity:1; }
+  .resultbar{ display:none; align-items:center; gap:10px; background:var(--teal-soft); border:1px solid var(--teal); border-radius:14px; padding:12px 14px; margin:14px 0 0; }
+  .resultbar.show{ display:flex; }
+  .resultbar .rb-txt{ flex:1; font-size:12.5px; color:#20443f; line-height:1.5; }
+  .resultbar button{ border:none; background:var(--teal); color:#fff; font-weight:700; border-radius:999px; padding:9px 14px; font-size:12.5px; cursor:pointer; font-family:inherit; white-space:nowrap; }
+
+  /* ---------- circle ---------- */
+  .circle-hero{ display:flex; align-items:center; gap:14px; background:var(--card); border:1px solid var(--line); border-radius:18px; padding:16px; box-shadow:var(--shadow); }
+  .ch-ic{ width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,#2E5B54,#3C7A6F);color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;flex:none; }
+  .ch-txt{ flex:1; min-width:0; }
+  .ch-txt h2{ margin:2px 0; font-size:20px; }
+  .ch-txt p{ margin:0; font-size:12px; color:var(--muted); }
+  .joinbtn{ flex:none; border:1px solid var(--teal); background:var(--teal); color:#fff; font-weight:700; font-size:12.5px; padding:9px 14px; border-radius:999px; cursor:pointer; font-family:inherit; }
+  .members-row{ display:flex; align-items:center; gap:12px; margin-top:14px; }
+  .mr-avatars{ display:flex; }
+  .mr-avatars img{ width:34px;height:34px;border-radius:50%;object-fit:cover;border:2px solid var(--paper); margin-left:-10px; }
+  .mr-avatars img:first-child{ margin-left:0; }
+  .mr-count{ font-size:12px; color:var(--muted); font-weight:600; }
+  .cpost{ margin-bottom:18px; }
+  .discuss{ margin-top:4px; padding-top:12px; border-top:1px solid var(--line); display:flex; flex-direction:column; gap:10px; }
+  .dc-row{ display:flex; gap:9px; align-items:flex-start; }
+  .dc-row img{ width:30px;height:30px;border-radius:50%;object-fit:cover;flex:none; }
+  .dc-name{ font-weight:700; font-size:12.5px; margin-right:6px; }
+  .dc-text{ font-size:12.5px; color:#4a4236; line-height:1.45; }
+  .viewall{ align-self:flex-start; border:none; background:transparent; color:var(--teal); font-weight:700; font-size:12.5px; padding:2px 0; cursor:pointer; font-family:inherit; }
+  .dmbtn{ margin-left:auto; border:1px solid var(--ink); background:var(--ink); color:#fff; font-weight:700; font-size:12.5px; padding:8px 13px; border-radius:999px; cursor:pointer; font-family:inherit; white-space:nowrap; }
+  .dmbtn:active{ transform:scale(.96); }
+
+  /* ---------- circle directory ---------- */
+  .sec-h{ font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.12em; color:var(--muted); margin:4px 0 12px; display:flex; align-items:center; gap:8px; }
+  .sec-h em{ font-style:normal; background:var(--accent-soft); color:var(--accent); border-radius:999px; padding:2px 8px; font-size:11px; letter-spacing:0; }
+  .empty-note{ font-size:13px; color:var(--muted); line-height:1.6; background:var(--card); border:1px dashed var(--line); border-radius:14px; padding:16px; }
+  .cc{ background:var(--card); border:1px solid var(--line); border-radius:18px; overflow:hidden; box-shadow:var(--shadow); margin-bottom:16px; cursor:pointer; }
+  .cc-cover{ position:relative; height:110px; }
+  .cc-cover img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .cc-cover::after{ content:''; position:absolute; inset:0; background:linear-gradient(180deg,rgba(20,15,10,.15),rgba(20,15,10,.45)); }
+  .cc-joined{ position:absolute; top:10px; left:10px; z-index:2; background:var(--teal); color:#fff; font-size:11px; font-weight:700; padding:5px 10px; border-radius:999px; }
+  .cc-online{ position:absolute; top:10px; right:10px; z-index:2; background:rgba(20,15,10,.62); color:#fff; font-size:11px; font-weight:600; padding:5px 10px; border-radius:999px; backdrop-filter:blur(4px); }
+  .cc-body{ padding:14px 16px 16px; }
+  .cc-body h3{ margin:0 0 3px; font-size:18px; }
+  .cc-body p{ margin:0; font-size:12.5px; color:var(--muted); line-height:1.45; }
+  .cc-foot{ display:flex; align-items:center; gap:10px; margin-top:13px; }
+  .cc-meta{ font-size:12px; font-weight:700; color:var(--ink); }
+  .cc-topics{ font-size:11.5px; color:var(--muted); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .openbtn{ flex:none; border:1px solid var(--line); background:#fff; color:var(--ink); font-weight:700; font-size:12.5px; padding:9px 16px; border-radius:999px; cursor:pointer; font-family:inherit; }
+  .openbtn:active{ transform:scale(.96); }
+
+  /* ---------- recommended circles (home) ---------- */
+  .cattabs.disc{ border-bottom:none; padding-top:12px; }
+  .rec-wrap{ margin:2px 16px 20px; }
+  .rec-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .rec-head span{ font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.12em; color:var(--muted); }
+  .rec-head button{ border:none; background:transparent; color:var(--teal); font-weight:700; font-size:12.5px; cursor:pointer; font-family:inherit; }
+  .rec-row{ display:flex; gap:12px; overflow-x:auto; padding-bottom:4px; }
+  .rec-row::-webkit-scrollbar{ height:0; }
+  .rec-card{ flex:none; width:230px; background:var(--card); border:1px solid var(--line); border-radius:16px; overflow:hidden; box-shadow:var(--shadow); }
+  .rec-card img{ width:100%; height:96px; object-fit:cover; display:block; }
+  .rc-body{ padding:12px 13px 14px; }
+  .rc-name{ font-size:15.5px; margin-bottom:2px; }
+  .rc-meta{ font-size:11.5px; color:var(--muted); }
+  .rc-sub{ font-size:12px; color:#4a4236; line-height:1.4; margin-top:6px; min-height:33px; }
+  .rc-btn{ width:100%; margin-top:10px; border:1px solid var(--teal); background:var(--teal); color:#fff; font-weight:700; font-size:12.5px; padding:9px 12px; border-radius:999px; cursor:pointer; font-family:inherit; }
+  .rc-btn.open{ border-color:var(--line); background:#fff; color:var(--ink); }
+  .rc-btn:active{ transform:scale(.97); }
+  .joinbtn.pending, .rc-btn.pending{ background:#EFE9DC; border-color:var(--line); color:var(--muted); cursor:default; }
+  .cc-joined.pending{ background:#8A8175; }
+
+  /* ---------- bottom nav ---------- */
+  .tabbar{ flex:none; display:flex; background:rgba(255,255,255,.96); backdrop-filter:blur(12px); border-top:1px solid var(--line); padding:8px 6px 12px; }
+  .tab{ flex:1; border:none; background:transparent; display:flex; flex-direction:column; align-items:center; gap:3px; color:var(--muted); font-size:10px; font-weight:600; cursor:pointer; font-family:inherit; padding:4px 0; }
+  .tab .ic{ font-size:19px; line-height:1; }
+  .tab.on{ color:var(--accent); }
+  .tab .dotbadge{ position:relative; }
+  .tab .dotbadge::after{ content:''; position:absolute; top:-2px; right:-6px; width:7px;height:7px;border-radius:50%;background:var(--accent); }
+
+  /* ---------- work detail ---------- */
+  .wd-img{ width:100%; display:block; background:#ddd; }
+  .wd-body{ padding:16px 18px 30px; }
+  .wd-body h2{ font-size:24px; margin:12px 0 6px; }
+
+  /* ---------- comment sheet ---------- */
+  .scrim{ position:absolute; inset:0; background:rgba(20,15,10,.45); opacity:0; pointer-events:none; transition:.25s; z-index:60; }
+  .scrim.show{ opacity:1; pointer-events:auto; }
+  .sheet{
+    position:absolute; left:0; right:0; bottom:0; background:var(--card); border-radius:26px 26px 0 0;
+    transform:translateY(110%); transition:.32s cubic-bezier(.2,.8,.2,1); z-index:70; max-height:82%;
+    display:flex; flex-direction:column; padding:8px 0 0;
+  }
+  .sheet.show{ transform:none; }
+  .sheet .handle{ width:40px;height:4px;border-radius:2px;background:#DDD3C4;margin:6px auto 4px; }
+  .sheet h4{ margin:8px 18px 4px; font-size:17px; }
+  .sheet .sub{ margin:0 18px 12px; font-size:12.5px; color:var(--muted); }
+  .quickc{ display:flex; flex-wrap:wrap; gap:8px; padding:0 18px 10px; }
+  .quickc button{ border:1px solid var(--line); background:#FBF7F0; border-radius:999px; padding:8px 13px; font-size:12.5px; font-weight:600; cursor:pointer; font-family:inherit; color:#4a4236; }
+  .quickc button:active{ background:var(--accent-soft); border-color:var(--accent); }
+  .clist{ padding:0 18px; overflow-y:auto; }
+  .crow{ display:flex; gap:10px; padding:11px 0; border-top:1px solid var(--line); }
+  .crow img{ width:34px;height:34px;border-radius:50%;object-fit:cover; }
+  .crow .cname{ font-weight:700; font-size:13px; }
+  .crow .ctext{ font-size:13px; color:#4a4236; line-height:1.5; margin-top:2px; }
+  .crow .cmeta{ font-size:11px; color:var(--muted); margin-top:3px; }
+  .sheet .csend{ display:flex; gap:8px; padding:12px 16px 18px; border-top:1px solid var(--line); margin-top:auto; }
+  .sheet .csend input{ flex:1; border:1px solid var(--line); border-radius:999px; padding:12px 16px; font-size:14px; font-family:inherit; outline:none; }
+  .sheet .csend button{ border:none; background:var(--accent); color:#fff; font-weight:700; border-radius:999px; padding:0 20px; cursor:pointer; font-family:inherit; }
+
+  /* ---------- toast + hearts ---------- */
+  .toast{
+    position:absolute; left:50%; bottom:92px; transform:translate(-50%,20px); background:var(--ink); color:#fff;
+    font-size:13px; font-weight:600; padding:11px 18px; border-radius:999px; opacity:0; pointer-events:none;
+    transition:.3s; z-index:90; max-width:86%; text-align:center; box-shadow:0 12px 30px rgba(0,0,0,.35);
+  }
+  .toast.show{ opacity:1; transform:translate(-50%,0); }
+  .floatheart{ position:fixed; font-size:18px; pointer-events:none; z-index:100; animation:up 900ms ease-out forwards; }
+  @keyframes up{ from{opacity:1; transform:translateY(0) scale(.8);} to{opacity:0; transform:translateY(-70px) scale(1.4);} }
+  .pill-row{ display:flex; gap:6px; flex-wrap:wrap; margin-top:10px;}
+</style>
+</head>
+<body>
+<div class="device">
+  <div class="statusbar"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+
+  <div class="screens" id="screens">
+    <!-- ============ DISCOVER ============ -->
+    <section class="screen active" id="screen-discover">
+      <div class="top">
+        <div class="brand disp">Kind<em>red</em></div>
+        <div class="grow"></div>
+        <div class="iconbtn" onclick="toast('Search by medium, style, or creator')">⌕</div>
+        <div class="iconbtn" onclick="toast('Refine your feed & craft tags')">⚙</div>
+      </div>
+      <div class="scroll">
+        <div class="cattabs disc" id="disc-tabs"></div>
+        <div class="hero-note">
+          <b>Learn in the open.</b> Follow the work, read the discussion underneath, and message any maker directly to ask how they did it.
+        </div>
+        <div class="rec-wrap">
+          <div class="rec-head">
+            <span>Recommended circles</span>
+            <button onclick="go('circle')">See all ›</button>
+          </div>
+          <div class="rec-row" id="rec-circles"></div>
+        </div>
+        <div class="feed" id="feed"></div>
+      </div>
+    </section>
+
+    <!-- ============ CIRCLE (learning community) ============ -->
+    <section class="screen" id="screen-circle">
+      <div class="top bordered">
+        <button class="back" id="circle-back" style="display:none" onclick="renderCircleDirectory()">‹</button>
+        <div class="title-sm disp" id="circle-title">Circles</div>
+        <div class="grow"></div>
+        <div class="iconbtn" onclick="toast('Search circles by name or topic')">⌕</div>
+        <div class="iconbtn" onclick="toast('Create a new circle')">＋</div>
+      </div>
+      <div class="cattabs" id="cattabs" style="display:none"></div>
+      <div class="scroll">
+        <div id="circle-root"></div>
+      </div>
+    </section>
+
+    <!-- ============ PROFILE ============ -->
+    <section class="screen" id="screen-profile">
+      <div class="scroll" id="profile-scroll"></div>
+    </section>
+
+    <!-- ============ WORK DETAIL ============ -->
+    <section class="screen" id="screen-work">
+      <div class="scroll" id="work-scroll"></div>
+    </section>
+
+    <!-- ============ DIRECT MESSAGE ============ -->
+    <section class="screen" id="screen-chat">
+      <div class="top bordered">
+        <button class="back" onclick="goBack()">‹</button>
+        <img id="chat-avatar" class="avatar" style="width:36px;height:36px;" src="https://i.pravatar.cc/240?img=13" />
+        <div>
+          <div class="name-line" id="chat-name">David Kaplan <span class="verified">✓</span></div>
+          <div class="role-sub">Direct message</div>
+        </div>
+        <div class="grow"></div>
+        <div class="iconbtn" onclick="toast('Message options')">⋯</div>
+      </div>
+      <div class="scroll" id="chat-body"></div>
+      <div class="actionchips" id="chat-actions"></div>
+      <div class="composer">
+        <input id="chat-input" placeholder="Write something honest…" onkeydown="if(event.key==='Enter')sendChat()" />
+        <button onclick="sendChat()">Send</button>
+      </div>
+    </section>
+
+    <!-- ============ MESSAGES ============ -->
+    <section class="screen" id="screen-messages">
+      <div class="top bordered"><div class="title-sm disp">Messages</div></div>
+      <div class="scroll">
+        <div class="msglist">
+          <div class="conv" onclick="openDM('david')">
+            <img src="https://i.pravatar.cc/240?img=13" />
+            <div class="c-body">
+              <div class="c-top"><span class="c-name">David Kaplan</span><span class="c-time">2m</span></div>
+              <div class="c-last">Happy to. I cut the first paragraph every time — send me something.</div>
+              <span class="c-stage">Writing · Slow Craft Circle</span>
+            </div>
+          </div>
+          <div class="conv" onclick="openDM('thomas')">
+            <img src="https://i.pravatar.cc/240?img=60" />
+            <div class="c-body">
+              <div class="c-top"><span class="c-name">Thomas Beck</span><span class="c-time">3h</span></div>
+              <div class="c-last">Sent you the rough cut — 6 minutes, no score yet.</div>
+              <span class="c-stage">Film · Slow Craft Circle</span>
+            </div>
+          </div>
+          <div class="conv" onclick="openDM('james')">
+            <img src="https://i.pravatar.cc/240?img=33" />
+            <div class="c-body">
+              <div class="c-top"><span class="c-name">James Whitfield</span><span class="c-time">1d</span></div>
+              <div class="c-last">Stand further left next time — let the corner breathe.</div>
+              <span class="c-stage">Photography · Slow Craft Circle</span>
+            </div>
+          </div>
+          <div class="conv" onclick="openDM('robert')">
+            <img src="https://i.pravatar.cc/240?img=8" />
+            <div class="c-body">
+              <div class="c-top"><span class="c-name">Robert Lindqvist</span><span class="c-time">4d</span></div>
+              <div class="c-last">The ice just went out on the lake. Come shoot the thaw.</div>
+              <span class="c-stage">Photography · Slow Craft Circle</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ ME ============ -->
+    <section class="screen" id="screen-me">
+      <div class="top bordered"><div class="title-sm disp">You</div></div>
+      <div class="scroll">
+        <div class="cover">
+          <img src="https://picsum.photos/seed/me-cover/900/500" />
+          <div class="name"><h2 class="disp">Alex Mercer</h2><div>46 · Essayist &amp; Photographer · Denver, CO</div></div>
+        </div>
+        <div class="pro-head">
+          <img class="avatar lg" src="https://i.pravatar.cc/240?img=11" />
+          <div class="pro-meta">
+            <div><span class="verified">✓ Verified creator</span></div>
+            <div class="r"><button class="followbtn" onclick="toast('Edit your profile & craft tags')">Edit profile</button></div>
+          </div>
+        </div>
+        <div class="statgrid">
+          <div class="stat"><b>34</b><span>Works</span></div>
+          <div class="stat"><b>860</b><span>Appreciations</span></div>
+          <div class="stat"><b>7</b><span>Circle posts</span></div>
+        </div>
+        <div style="padding:0 18px;">
+          <p style="font-size:13.5px;line-height:1.6;color:#4a4236;margin:0 0 4px;">I write small pieces about ordinary mornings and shoot them on a 40-year-old Nikon. Here for one good creative partner, not a hundred followers.</p>
+          <div class="tags"><span class="tag">Warm light</span><span class="tag">Quiet composition</span><span class="tag amber">Long-form essay</span><span class="tag">Film grain</span></div>
+        </div>
+        <div class="tabsline"><span class="on">My work</span><span onclick="toast('Your craft stats & appreciation history')">Craft stats</span></div>
+        <div style="height:14px"></div>
+        <div class="gallery">
+          <div class="g" onclick="openWork('alex',0)"><img src="https://picsum.photos/seed/alex-1/600/800" /><div class="cap">Before the Fog Lifts</div></div>
+          <div class="g" onclick="openWork('alex',1)"><img src="https://picsum.photos/seed/alex-2/600/500" /><div class="cap">One More Winter</div></div>
+          <div class="g" onclick="openWork('david',1)"><img src="https://picsum.photos/seed/alex-3/600/500" /><div class="cap">The Shop on 9th</div></div>
+          <div class="g" onclick="openWork('alex',2)"><img src="https://picsum.photos/seed/alex-4/600/800" /><div class="cap">Grain</div></div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ============ comment sheet ============ -->
+  <div class="scrim" id="scrim" onclick="closeSheet()"></div>
+  <div class="sheet" id="sheet">
+    <div class="handle"></div>
+    <h4 id="sheet-title" class="disp">Leave a note on the work</h4>
+    <div class="sub" id="sheet-sub">One-click to say something real — process, light, feeling.</div>
+    <div class="quickc" id="quickc"></div>
+    <div class="clist" id="clist"></div>
+    <div class="csend">
+      <input id="comment-input" placeholder="Type a quick note…" />
+      <button onclick="sendComment()">Post</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <!-- ============ bottom nav ============ -->
+  <nav class="tabbar">
+    <button class="tab on" data-tab="discover" onclick="go('discover')"><span class="ic">◎</span>Discover</button>
+    <button class="tab" data-tab="circle" onclick="go('circle')"><span class="ic">◉</span>Circle</button>
+    <button class="tab" data-tab="messages" onclick="go('messages')"><span class="ic dotbadge">✉</span>Messages</button>
+    <button class="tab" data-tab="me" onclick="go('me')"><span class="ic">◍</span>You</button>
+  </nav>
+</div>
+
+<script>
+/* ============================================================
+   DATA
+   ============================================================ */
+const AV = n => `https://i.pravatar.cc/240?img=${n}`;
+const IMG = (seed,w=900,h=680) => `https://picsum.photos/seed/${seed}/${w}/${h}`;
+
+const CREATORS = {
+  alex: { name:'Alex Mercer', age:46, role:'Essayist & Photographer', location:'Denver, CO', avatar:AV(11),
+    bio:'I write small pieces about ordinary mornings and shoot them on a 40-year-old Nikon. Looking for one good creative partner to trade honest notes with.',
+    tags:['Warm light','Quiet composition','Long-form essay','Film grain'],
+    stats:{works:34,appreciations:860,exchanges:7},
+    works:[
+      {seed:'alex-1', title:'Before the Fog Lifts', medium:'Photography', appr:214,
+        desc:'Forty minutes of waiting for one gap in the mist. The reward was the silence before it opened.',
+        comments:[{a:AV(13),n:'David K.',t:'That restraint is the whole photograph. A tripod-and-wait shot.',w:'2h ago'}]},
+      {seed:'alex-2', title:'One More Winter', medium:'Photography', appr:98,
+        desc:'My father’s coat on the porch, left out long after he stopped needing it.', comments:[]},
+      {seed:'alex-4', title:'Grain', medium:'Short Essay', appr:151,
+        desc:'On why imperfect film still beats perfect pixels — a short piece about keeping the noise.', comments:[]}
+    ]},
+  david: { name:'David Kaplan', age:52, role:'Essayist', location:'Providence, RI', avatar:AV(13),
+    bio:'Twenty years of short essays about café light and things my father built. I publish little, and mean every line of it.',
+    tags:['Warm low light','Quiet composition','Film grain','The ordinary'],
+    stats:{works:48,appreciations:1240,exchanges:12},
+    works:[
+      {seed:'david-cafe', title:'The Corner Café, 6 a.m.', medium:'Short Essay', appr:332,
+        desc:'The man who opens the place knows my order before I sit down. Some mornings that is the entire story.',
+        comments:[{a:AV(11),n:'Alex M.',t:'That’s the one I almost didn’t publish — thank you.',w:'just now'}]},
+      {seed:'david-father', title:'Things My Father Built', medium:'Short Essay', appr:508,
+        desc:'A bench, a shelf, a life. What an ordinary man leaves behind when no one is looking.', comments:[]},
+      {seed:'david-letter', title:'Letter to a Younger Self', medium:'Short Essay', appr:176,
+        desc:'Advice I would only trust from someone who already made the mistakes.', comments:[]}
+    ]},
+  thomas: { name:'Thomas Beck', age:45, role:'Filmmaker', location:'Charleston, SC', avatar:AV(60),
+    bio:'I make slow little films about tides, skiffs and the people who still work the water. No score until the cut earns it.',
+    tags:['Documentary','Slow cinema','Natural sound','Coastal'],
+    stats:{works:22,appreciations:690,exchanges:9},
+    works:[
+      {seed:'thomas-marsh', title:'Salt Marsh — a 12-min film', medium:'Film', appr:287, video:true,
+        desc:'Twelve minutes on the marsh at low tide, shot over one autumn. Best heard with headphones.',
+        comments:[{a:AV(11),n:'Alex M.',t:'The natural sound carries the whole thing. Don’t add a score.',w:'3h ago'}]},
+      {seed:'thomas-tide', title:'Tide Charts', medium:'Film', appr:140, video:true,
+        desc:'A study of the same three feet of coastline, filmed once a day for a month.', comments:[]},
+      {seed:'thomas-skiff', title:'Sunday Skiffs', medium:'Photography', appr:88,
+        desc:'Working boats at rest — the only day the water gets quiet.', comments:[]}
+    ]},
+  james: { name:'James Whitfield', age:49, role:'Street Photographer', location:'Chicago, IL', avatar:AV(33),
+    bio:'Street work in black and white. I wait on corners for the moment a city forgets it’s being watched.',
+    tags:['Street','Monochrome','Candid','35mm'],
+    stats:{works:61,appreciations:1530,exchanges:15},
+    works:[
+      {seed:'james-cadillac', title:'Cadillac on 5th', medium:'Photography', appr:412,
+        desc:'He polished it every Sunday for thirty years. The city moved on around it.', 
+        comments:[{a:AV(8),n:'Robert L.',t:'The patience in that frame is unmistakable.',w:'1d ago'}]},
+      {seed:'james-el', title:'El Platform', medium:'Photography', appr:233,
+        desc:'The 4:45 train, the same strangers, the one gap in the crowd.', comments:[]},
+      {seed:'james-window', title:'Window Washers', medium:'Photography', appr:190,
+        desc:'Twenty floors up, a conversation you can’t hear.', comments:[]}
+    ]},
+  robert: { name:'Robert Lindqvist', age:55, role:'Photographer & Woodworker', location:'Duluth, MN', avatar:AV(8),
+    bio:'I shoot the lake in every season and build the frames that hold it. Slow work, both of them.',
+    tags:['Landscape','Warm light','Handmade','Cold country'],
+    stats:{works:39,appreciations:900,exchanges:11},
+    works:[
+      {seed:'robert-grain', title:'Grain & Gravity', medium:'Photography', appr:265,
+        desc:'Old barn wood and morning light, close enough to read the decades in it.', comments:[]},
+      {seed:'robert-bench', title:'The Bench', medium:'Photography', appr:178,
+        desc:'Built it in 1994. It has held four funerals and one wedding.', comments:[]},
+      {seed:'robert-lake', title:'Lake, Frozen', medium:'Photography', appr:301,
+        desc:'The ice sings at night. You can’t photograph the sound — so I tried anyway.', comments:[]}
+    ]},
+  michael: { name:'Michael Rousseau', age:47, role:'Landscape Photographer', location:'Portland, OR', avatar:AV(52),
+    bio:'I chase weather, not people — fog, rain and ridgelines at first light, and the quiet that comes with waiting for them.',
+    tags:['Landscape','Warm light','Weather','Long exposures'],
+    stats:{works:44,appreciations:1105,exchanges:10},
+    works:[
+      {seed:'michael-ridge', title:'Fog on the Ridge', medium:'Photography', appr:398,
+        desc:'The ridge only shows itself for a few minutes in this weather. I have driven eight hours for less.',
+        comments:[{a:AV(8),n:'Robert L.',t:'That patience again. Beautifully held, Michael.',w:'5h ago'}]},
+      {seed:'michael-home', title:'The Long Way Home', medium:'Photography', appr:210,
+        desc:'A back road in the rain, taken at the end of a very long week.', comments:[]},
+      {seed:'michael-cotton', title:'Winter Cottonwoods', medium:'Photography', appr:167,
+        desc:'Bare trees along the river, lit the way only January can light them.', comments:[]}
+    ]},
+  elena: { name:'Elena Marsh', age:43, role:'Poet · Spoken Word', location:'Asheville, NC', avatar:AV(45),
+    bio:'Short poems about weather, working hands and the space between two people. I read them aloud over field recordings.',
+    tags:['Poetry','Spoken word','Nature','Field recordings'],
+    stats:{works:27,appreciations:540,exchanges:6},
+    works:[
+      {seed:'elena-field', title:'Field Notes', medium:'Poetry · Audio', appr:198,
+        desc:'Read aloud over a recording of the creek behind my house. Best with headphones, at dusk.',
+        comments:[{a:AV(11),n:'Alex M.',t:'The pause before the last line is the whole poem.',w:'1d ago'}]},
+      {seed:'elena-rites', title:'Small Rites', medium:'Poetry', appr:143,
+        desc:'On the small ceremonies of ordinary days — coffee, rain, a door left open.', comments:[]},
+      {seed:'elena-light', title:'Winter Light', medium:'Poetry', appr:121,
+        desc:'Four lines written at a window in February. Nothing more was needed.', comments:[]}
+    ]},
+  marcus: { name:'Marcus Bell', age:50, role:'Painter', location:'Baltimore, MD', avatar:AV(68),
+    bio:'Oil painter. Harbors, working boats and the last hour of light — I paint the same waterfront until it finally tells me the truth.',
+    tags:['Oil paint','Landscape','Warm light','Working boats'],
+    stats:{works:31,appreciations:720,exchanges:8},
+    works:[
+      {seed:'marcus-harbor', title:'Harbor at Dusk', medium:'Oil on canvas', appr:356,
+        desc:'The last hour of light on the same three boats I have painted for eleven years.',
+        comments:[{a:AV(11),n:'Alex M.',t:'You can smell the salt in this one.',w:'2d ago'}]},
+      {seed:'marcus-ochre', title:'Study in Ochre', medium:'Oil on canvas', appr:188,
+        desc:'A small study I kept in the studio for a year before I understood it.', comments:[]},
+      {seed:'marcus-blue', title:'The Weight of Blue', medium:'Oil on canvas', appr:241,
+        desc:'Not the sea — the feeling of standing in front of it.', comments:[]}
+    ]},
+  daniel: { name:'Daniel Cho', age:44, role:'Graphic Designer', location:'Seattle, WA', avatar:AV(59),
+    bio:'Posters, type and public signage. I design things meant to be read at 40 mph and still hold up close.',
+    tags:['Typography','Poster design','Grid','Print'],
+    stats:{works:52,appreciations:980,exchanges:13},
+    works:[
+      {seed:'daniel-transit', title:'Transit Posters', medium:'Graphic design', appr:290,
+        desc:'A series for the light-rail system — readable across the platform, honest up close.', comments:[]},
+      {seed:'daniel-grid', title:'Grid & Grace', medium:'Typography', appr:174,
+        desc:'An exercise in letting a strict grid feel human.', comments:[]},
+      {seed:'daniel-typewnat', title:'Type in the Wild', medium:'Photography', appr:132,
+        desc:'Signs and hand-lettering photographed over a month on the road.', comments:[]}
+    ]},
+  sam: { name:'Sam Rivera', age:48, role:'Composer', location:'Austin, TX', avatar:AV(15),
+    bio:'I write small instrumental pieces for rooms, not stages — piano, tape hiss, and whatever the night sounds like.',
+    tags:['Piano','Ambient','Analog','Instrumental'],
+    stats:{works:40,appreciations:830,exchanges:9},
+    works:[
+      {seed:'sam-nocturne', title:'Nocturne for a Small Room', medium:'Original composition', appr:344, audio:true,
+        desc:'Piano and tape hiss, recorded at 2 a.m. Best on headphones with the lights off.',
+        comments:[{a:AV(11),n:'Alex M.',t:'The hiss is doing as much work as the notes. Don’t clean it up.',w:'6h ago'}]},
+      {seed:'sam-reverb', title:'Reverb Tapes', medium:'Original composition', appr:201, audio:true,
+        desc:'Four loops built from an old church hall and one broken microphone.', comments:[]},
+      {seed:'sam-sunday', title:'Sunday Sessions', medium:'Original composition', appr:167, audio:true,
+        desc:'Unedited takes. Wrong notes left in on purpose.', comments:[]}
+    ]}
+};
+const FEED = [
+  {c:'sam', w:0},
+  {c:'marcus', w:0},
+  {c:'david', w:0},
+  {c:'daniel', w:0},
+  {c:'michael', w:0},
+  {c:'thomas', w:0},
+  {c:'elena', w:0},
+  {c:'james', w:0},
+  {c:'robert', w:2},
+  {c:'daniel', w:1},
+  {c:'sam', w:1},
+  {c:'marcus', w:1}
+];
+
+/* ============================================================
+   NAV
+   ============================================================ */
+let HISTORY = [];
+function go(id, push=true){
+  const cur = document.querySelector('.screen.active');
+  if (push && cur) HISTORY.push(cur.id.replace('screen-',''));
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+id).classList.add('active');
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on', t.dataset.tab===id));
+  const sc = document.querySelector('#screen-'+id+' .scroll');
+  if (sc) sc.scrollTop = 0;
+  if (id==='chat') { const b=document.querySelector('#chat-body'); if(b) b.scrollTop=b.scrollHeight; }
+}
+function goBack(){ const prev = HISTORY.pop() || 'discover'; go(prev, false); }
+function subtab(el){ el.parentNode.querySelectorAll('span').forEach(s=>s.classList.remove('on')); el.classList.add('on'); }
+
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(window._tt); window._tt = setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+/* ============================================================
+   FEED
+   ============================================================ */
+let disc = { topic:'all' };
+function renderDiscTabs(){
+  document.getElementById('disc-tabs').innerHTML = CATS.map(c=>{
+    const label = c.id==='film' ? 'Audio &amp; Video' : c.label;
+    return `<button class="${disc.topic===c.id?'on':''}" onclick="setDiscTopic('${c.id}')">${label}</button>`;
+  }).join('');
+}
+function setDiscTopic(id){
+  disc.topic = id; renderDiscTabs(); renderFeed();
+  document.querySelector('#screen-discover .scroll').scrollTo({top:0, behavior:'smooth'});
+}
+function renderRecommended(){
+  const ids = ['sonic','street','studio','writing'];
+  document.getElementById('rec-circles').innerHTML = ids.map(id=>recCard(CIRCLES.find(c=>c.id===id))).join('');
+}
+function recCard(c){
+  return `<div class="rec-card">
+    <img src="${IMG(c.seed,460,260)}" alt="" />
+    <div class="rc-body">
+      <div class="rc-name disp">${c.name}</div>
+      <div class="rc-meta">${fmtNum(c.members)} members · ${topicsLabel(c.topics)}</div>
+      <div class="rc-sub">${c.tagline}</div>
+      ${circleActionBtn(c,'rec')}
+    </div>
+  </div>`;
+}
+
+function renderFeed(){
+  const host = document.getElementById('feed');
+  const items = FEED.filter(it => disc.topic==='all' || CAT_OF[it.c]===disc.topic);
+  if (!items.length){ host.innerHTML = `<div class="empty-note">Nothing in this topic yet — try another tab.</div>`; return; }
+  host.innerHTML = items.map((item, idx)=>{
+    const c = CREATORS[item.c], w = c.works[item.w];
+    const key = `${item.c}:${item.w}`;
+    const media = w.video
+      ? `<div class="work-media" onclick="openWork('${item.c}',${item.w})">
+           <img class="work-img" src="${IMG(w.seed)}" />
+           <span class="badge">▶ Film · 12 min</span>
+           <div class="playbtn">▶</div>
+           ${item.match?'<span class="matchbadge">✦ Craft match</span>':''}
+         </div>`
+      : `<div class="work-media" onclick="openWork('${item.c}',${item.w})">
+           <img class="work-img" src="${IMG(w.seed)}" />
+           <span class="badge">${w.audio?'♪ '+w.medium:w.medium}</span>
+           ${w.audio?'<div class="playbtn">♪</div>':''}
+           ${item.match?'<span class="matchbadge">✦ Craft match</span>':''}
+         </div>`;
+    return `<div class="card">
+      ${media}
+      <div class="cardbody">
+        <div class="creator-row" onclick="openProfile('${item.c}')">
+          <img class="avatar" src="${c.avatar}" />
+          <div>
+            <div class="name-line">${c.name} <span class="verified">✓</span> <span class="city">· ${c.age}, ${c.location}</span></div>
+            <div class="role-sub">${c.role}</div>
+          </div>
+        </div>
+        <h3 class="disp">${w.title}</h3>
+        <div class="tags"><span class="tag">${w.medium}</span>${c.tags.slice(0,2).map(t=>`<span class="tag amber">${t}</span>`).join('')}</div>
+        <div class="actions">
+          <button class="iact grow" data-key="${key}" onclick="appreciate(this,'${item.c}',${item.w})">
+            <span class="heartic">♡</span><span class="acount">${w.appr}</span> Appreciate
+          </button>
+          <button class="iact" onclick="openComments('${item.c}',${item.w})"><span class="heartic">✎</span>Comment</button>
+          <button class="dmbtn" onclick="openDM('${item.c}')">Ask ${c.name.split(' ')[0]}</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function appreciate(btn, cid, wi){
+  const on = btn.classList.toggle('appreciated');
+  const el = btn.querySelector('.acount');
+  let n = parseInt(el.textContent,10) + (on?1:-1);
+  el.textContent = n;
+  CREATORS[cid].works[wi].appr = n;
+  btn.querySelector('.heartic').textContent = on ? '♥' : '♡';
+  if (on){
+    burstHearts(btn);
+    toast(`Appreciation sent to ${CREATORS[cid].name.split(' ')[0]} — honest note beats a like.`);
+  }
+}
+function burstHearts(btn){
+  const r = btn.getBoundingClientRect();
+  for (let i=0;i<5;i++){
+    const s = document.createElement('div');
+    s.className='floatheart'; s.textContent='♥';
+    s.style.left = (r.left + r.width/2 + (Math.random()*40-20)) + 'px';
+    s.style.top = r.top + 'px';
+    s.style.color = ['#B4552D','#C08A2E','#2E5B54'][i%3];
+    document.body.appendChild(s);
+    setTimeout(()=>s.remove(), 950);
+  }
+}
+
+/* ============================================================
+   PROFILE
+   ============================================================ */
+function openProfile(cid){
+  const c = CREATORS[cid];
+  const host = document.getElementById('profile-scroll');
+  host.innerHTML = `
+    <div class="cover">
+      <button class="back" onclick="goBack()">‹</button>
+      <img src="${IMG(c.works[0].seed, 900, 520)}" />
+      <div class="name"><h2 class="disp">${c.name}</h2><div>${c.age} · ${c.role} · ${c.location}</div></div>
+    </div>
+    <div class="pro-head">
+      <img class="avatar lg" src="${c.avatar}" />
+      <div class="pro-meta">
+        <div><span class="verified">✓ Verified creator</span></div>
+        <div class="r">
+          <button class="apprbtn" id="pro-appr" onclick="proAppreciate(this,'${cid}')">♡ Appreciate</button>
+          <button class="followbtn" onclick="toast('Following ${c.name.split(' ')[0]} — you’ll see their new work first')">Follow</button>
+        </div>
+      </div>
+    </div>
+    <div class="statgrid">
+      <div class="stat"><b>${c.stats.works}</b><span>Works</span></div>
+      <div class="stat"><b>${(c.stats.appreciations/1000).toFixed(1)}k</b><span>Appreciations</span></div>
+      <div class="stat"><b>${c.stats.exchanges}</b><span>Circle posts</span></div>
+    </div>
+    <div style="padding:0 18px;">
+      <p style="font-size:13.5px;line-height:1.6;color:#4a4236;margin:0 0 4px;">${c.bio}</p>
+      <div class="tags">${c.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+      ${cid!=='alex' ? `<button class="primary" style="margin-top:16px;" onclick="openDM('${cid}')">Ask ${c.name.split(' ')[0]} a question</button>` : ''}
+    </div>
+    <div class="tabsline"><span class="on">Work</span><span onclick="toast('${c.name.split(' ')[0]}’s craft stats')">Craft stats</span><span onclick="toast('Notes received in the circle')">Notes</span></div>
+    <div style="height:14px"></div>
+    <div class="gallery">
+      ${c.works.map((w,i)=>`<div class="g" onclick="openWork('${cid}',${i})"><img src="${IMG(w.seed,600,700)}" /><div class="cap">${w.title}</div></div>`).join('')}
+    </div>`;
+  if (!document.getElementById('screen-profile').classList.contains('active')) go('profile');
+}
+function proAppreciate(btn, cid){
+  const on = btn.classList.toggle('on');
+  btn.innerHTML = on ? '♥ Appreciated' : '♡ Appreciate';
+  if (on) toast(`You appreciate ${CREATORS[cid].name.split(' ')[0]}’s craft.`);
+}
+
+/* ============================================================
+   WORK DETAIL
+   ============================================================ */
+let CURRENT = {cid:null, wi:null};
+function openWork(cid, wi){
+  const c = CREATORS[cid], w = c.works[wi];
+  CURRENT = {cid, wi};
+  const host = document.getElementById('work-scroll');
+  const media = w.video
+    ? `<video class="wd-img" controls poster="${IMG(w.seed)}" style="aspect-ratio:16/10;object-fit:cover;">
+         <source src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4" />
+       </video>`
+    : `<img class="wd-img" src="${IMG(w.seed,1000,760)}" style="aspect-ratio:4/3;object-fit:cover;" />`;
+  const audioPlayer = w.audio
+    ? `<audio controls preload="none" src="${AUDIO}" style="width:100%;margin-top:14px;border-radius:12px;"></audio>`
+    : '';
+  host.innerHTML = `
+    <div class="top" style="position:absolute;width:100%;background:linear-gradient(180deg,rgba(20,15,10,.45),transparent);">
+      <button class="back" style="color:#fff" onclick="goBack()">‹</button>
+      <div class="grow"></div>
+      <div class="iconbtn" style="background:rgba(20,15,10,.5);border:none;color:#fff" onclick="toast('Saved to your inspiration board')">↧</div>
+    </div>
+    ${media}
+    <div class="wd-body">
+      <div class="creator-row" onclick="openProfile('${cid}')">
+        <img class="avatar" src="${c.avatar}" />
+        <div>
+          <div class="name-line">${c.name} <span class="verified">✓</span> <span class="city">· ${c.age}, ${c.role}</span></div>
+          <div class="role-sub">${c.location}</div>
+        </div>
+      </div>
+      <h2 class="disp">${w.title}</h2>
+      <div class="tags"><span class="tag">${w.medium}</span>${c.tags.slice(0,3).map(t=>`<span class="tag amber">${t}</span>`).join('')}</div>
+      <p class="work-desc" style="font-size:14px;margin-top:12px;">${w.desc}</p>
+      ${audioPlayer}
+      <div class="actions" style="margin-top:18px;">
+        <button class="iact grow" data-key="${cid}:${wi}" onclick="appreciate(this,'${cid}',${wi})">
+          <span class="heartic">♡</span><span class="acount">${w.appr}</span> Appreciate
+        </button>
+        <button class="iact" onclick="openComments('${cid}',${wi})"><span class="heartic">💬</span>Leave a note</button>
+      </div>
+      <button class="primary teal" style="margin-top:16px;" onclick="openDM('${cid}')">Ask ${c.name.split(' ')[0]} a question</button>
+      <div style="height:10px"></div>
+    </div>`;
+  go('work');
+}
+
+/* ============================================================
+   COMMENTS SHEET
+   ============================================================ */
+const QUICK = [
+  'Strong composition','Love the light here','This stopped me scrolling',
+  'The restraint is everything','Tell me about your process','Would love to shoot like this'
+];
+let SHEET = {cid:null, wi:null};
+function openComments(cid, wi){
+  SHEET = {cid, wi};
+  const c = CREATORS[cid], w = c.works[wi];
+  document.getElementById('sheet-title').textContent = `Discussion · “${w.title}”`;
+  document.getElementById('sheet-sub').textContent = `Public in Slow Craft Circle — everyone can read and reply.`;
+  document.getElementById('quickc').innerHTML = QUICK.map(q=>`<button onclick="quickComment('${q.replace(/'/g,"\\'")}')">${q}</button>`).join('');
+  document.getElementById('clist').innerHTML = w.comments.length
+    ? w.comments.map(cm=>`<div class="crow"><img src="${cm.a}" /><div><div class="cname">${cm.n}</div><div class="ctext">${cm.t}</div><div class="cmeta">${cm.w}</div></div></div>`).join('')
+    : `<div class="crow" style="border-top:none;color:var(--muted);font-size:13px;">Be the first to say something honest about this work.</div>`;
+  document.getElementById('scrim').classList.add('show');
+  document.getElementById('sheet').classList.add('show');
+}
+function closeSheet(){
+  document.getElementById('scrim').classList.remove('show');
+  document.getElementById('sheet').classList.remove('show');
+}
+function quickComment(text){ doComment(text); }
+function sendComment(){
+  const inp = document.getElementById('comment-input');
+  const v = inp.value.trim(); if(!v) return;
+  inp.value=''; doComment(v);
+}
+function doComment(text){
+  const w = CREATORS[SHEET.cid].works[SHEET.wi];
+  w.comments.unshift({a:AV(11), n:'Alex M. (you)', t:text, w:'just now'});
+  openComments(SHEET.cid, SHEET.wi);
+  document.getElementById('comment-input').value='';
+  toast('Note posted — everyone in the circle can see and reply.');
+}
+
+/* ============================================================
+   DIRECT MESSAGE — ask a maker for advice
+   ============================================================ */
+const ASK = ['Ask about their process','Ask what gear they used','Ask how they stay consistent','Thank them for the note'];
+let chat = { cid:'david', msgs:[] };
+
+function seedChat(cid){
+  const c = CREATORS[cid], first = c.name.split(' ')[0];
+  if (cid === 'david'){
+    chat = { cid, msgs:[
+      {f:'sys', t:`Private message with ${c.name} · only the two of you can see this.`},
+      {f:'them', t:`Thanks for the note on the café piece, Alex. It’s the one I almost didn’t publish.`},
+      {f:'me', t:`It stayed with me all week. Would you mind sharing how you keep an essay that quiet? I’m trying to learn it.`},
+      {f:'them', t:`Happy to. I cut the first paragraph every time — usually the ending too. Send me something and we’ll look at it together.`}
+    ]};
+  } else {
+    chat = { cid, msgs:[
+      {f:'sys', t:`Private message with ${c.name}. Ask anything — most makers here love talking process.`},
+      {f:'them', t:`Hi Alex — thanks for following my work in the circle. What are you hoping to figure out?`}
+    ]};
+  }
+}
+function openDM(cid){
+  seedChat(cid);
+  const c = CREATORS[cid];
+  document.getElementById('chat-name').innerHTML = `${c.name} <span class="verified">✓</span>`;
+  document.getElementById('chat-avatar').src = c.avatar;
+  if (cid !== 'david') toast(`Private message with ${c.name.split(' ')[0]}`);
+  renderChat();
+  go('chat');
+}
+function renderChat(){
+  const body = document.getElementById('chat-body');
+  body.innerHTML = chat.msgs.map(m=>{
+    if (m.f==='sys') return `<div class="sys">${m.t}</div>`;
+    return `<div class="msg ${m.f}">${m.t}</div>`;
+  }).join('');
+  body.scrollTop = body.scrollHeight;
+  const act = document.getElementById('chat-actions');
+  act.innerHTML = ASK.map(a=>`<button class="chip" onclick="doAction('${a.replace(/'/g,"\\'")}')">${a}</button>`).join('');
+}
+function pushMsg(f,t){ chat.msgs.push({f,t}); renderChat(); }
+function doAction(a){
+  pushMsg('me', a + '.');
+  const replies = {
+    'Ask about their process':'I write it longhand first, then edit on screen. The slowness is the whole point.',
+    'Ask what gear they used':'Nothing fancy — an old body and one fixed lens. The limitation does the work.',
+    'Ask how they stay consistent':'A small daily notebook. Some days it’s one line, but it never breaks.',
+    'Thank them for the note':'Thank you for taking the time. That’s the whole reason this circle works.'
+  };
+  setTimeout(()=>pushMsg('them', replies[a] || 'Good question — let me think about that one.'), 550);
+}
+function sendChat(){
+  const inp = document.getElementById('chat-input');
+  const v = inp.value.trim(); if(!v) return;
+  inp.value=''; pushMsg('me', v);
+  setTimeout(()=>pushMsg('them','Good question. Give me a minute and I’ll write it out properly — happy to look at your work too.'), 700);
+}
+
+/* ============================================================
+   CIRCLE (learning community) — shared feed with open discussion
+   ============================================================ */
+const CATS = [
+  {id:'all', label:'All'},
+  {id:'art', label:'Fine Art'},
+  {id:'design', label:'Design'},
+  {id:'music', label:'Music'},
+  {id:'writing', label:'Writing'},
+  {id:'photo', label:'Photography'},
+  {id:'film', label:'Film'}
+];
+const CAT_OF = { marcus:'art', daniel:'design', sam:'music', david:'writing', elena:'writing',
+                 michael:'photo', robert:'photo', james:'photo', thomas:'film' };
+const BROWSE = ['marcus','daniel','sam','david','elena','michael','thomas','robert','james'];
+const AUDIO = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
+
+const MEMBERS = [
+  {n:'Grace Okafor', a:AV(31)}, {n:'Hank Mercer', a:AV(22)},
+  {n:'Lin Zhao', a:AV(49)},     {n:'Priya Nair', a:AV(24)},
+  {n:'Tony Falco', a:AV(17)},   {n:'Ruth Adler', a:AV(64)},
+  {n:'Omar Haddad', a:AV(51)},  {n:'Beth Cole', a:AV(38)}
+];
+const COMMENT_POOL = [
+  'The restraint here is the whole thing — beautifully held.',
+  'Came back to this twice today. Morning light, or evening?',
+  'This is the kind of work that makes me want to slow down.',
+  'The light in the lower third — how did you meter for it?',
+  'Saved it. Would love to hear how you approached the edit.',
+  'Quiet, patient, honest. Following for more of this.',
+  'There is so much silence in this frame — I mean that as praise.',
+  'How long did you sit with this before you knew it was done?'
+];
+
+const CIRCLES = [
+  { id:'slowcraft', name:'Slow Craft Circle', tagline:'For makers who take their time', topics:['all'],
+    members:1284, online:38, seed:'circle-slow', state:'member', approval:false },
+  { id:'street', name:'Street & Documentary', tagline:'Corners, crowds and the decisive moment', topics:['photo','film'],
+    members:8642, online:210, seed:'circle-street', state:'none', approval:false },
+  { id:'writing', name:'Quiet Writing Room', tagline:'Essays, drafts and honest editing', topics:['writing'],
+    members:3120, online:96, seed:'circle-write', state:'none', approval:true },
+  { id:'canvas', name:'Oil & Canvas', tagline:'Painters talking pigment and patience', topics:['art'],
+    members:1890, online:52, seed:'circle-art', state:'none', approval:true },
+  { id:'studio', name:'Design Studio', tagline:'Type, grid and public work', topics:['design'],
+    members:4410, online:130, seed:'circle-design', state:'none', approval:false },
+  { id:'sonic', name:'Sonic Room', tagline:'Composers and field recordists', topics:['music'],
+    members:2260, online:74, seed:'circle-music', state:'none', approval:true }
+];
+
+let circle = { mode:'directory', id:null, topic:'all' };
+
+function fmtNum(n){ return n>=1000 ? (n/1000).toFixed(1)+'k' : String(n); }
+function catLabel(id){ const c = CATS.find(c=>c.id===id); return c ? c.label : id; }
+function topicsLabel(ids){ return ids.includes('all') ? 'All kinds of work' : ids.map(catLabel).join(' · '); }
+
+function initCircle(){ renderCircleDirectory(); }
+
+function circleActionBtn(c, context){
+  const cls = context==='rec' ? 'rc-btn' : 'joinbtn';
+  if (c.state==='member'){
+    return context==='rec'
+      ? `<button class="rc-btn open" onclick="openCircleTab('${c.id}')">Open</button>`
+      : `<button class="openbtn" onclick="event.stopPropagation(); openCircle('${c.id}')">Open</button>`;
+  }
+  if (c.state==='pending') return `<button class="${cls} pending" disabled>Requested ✓</button>`;
+  const label = c.approval ? 'Request to join' : 'Join';
+  return `<button class="${cls}" onclick="event.stopPropagation(); requestJoin('${c.id}')">${label}</button>`;
+}
+function openCircleTab(id){ go('circle'); openCircle(id); }
+
+function renderCircleDirectory(){
+  circle.mode='directory'; circle.id=null; circle.topic='all';
+  document.getElementById('circle-back').style.display='none';
+  document.getElementById('circle-title').textContent='Circles';
+  document.getElementById('cattabs').style.display='none';
+  const mine = CIRCLES.filter(c=>c.state==='member');
+  const rest = CIRCLES.filter(c=>c.state!=='member');
+  document.getElementById('circle-root').innerHTML = `
+    <div class="matchwrap" style="padding-top:6px;">
+      <div class="sec-h">Your circles <em>${mine.length}</em></div>
+      ${ mine.length ? mine.map(circleCard).join('')
+        : `<div class="empty-note">You haven’t joined a circle yet. Join one below — everything in Kindred happens inside circles.</div>` }
+      <div class="sec-h" style="margin-top:24px;">Discover circles</div>
+      ${rest.map(circleCard).join('')}
+    </div>`;
+}
+
+function circleCard(c){
+  return `<div class="cc" onclick="openCircle('${c.id}')">
+    <div class="cc-cover">
+      <img src="${IMG(c.seed,700,340)}" />
+      ${ c.state==='member' ? '<span class="cc-joined">Joined</span>'
+        : c.state==='pending' ? '<span class="cc-joined pending">Requested</span>'
+        : `<span class="cc-online">● ${c.online} online</span>` }
+    </div>
+    <div class="cc-body">
+      <h3 class="disp">${c.name}</h3>
+      <p>${c.tagline}</p>
+      <div class="cc-foot">
+        <span class="cc-meta">${fmtNum(c.members)} members</span>
+        <span class="cc-topics">${topicsLabel(c.topics)}</span>
+        ${circleActionBtn(c,'dir')}
+      </div>
+    </div>
+  </div>`;
+}
+
+function requestJoin(id){
+  const c = CIRCLES.find(x=>x.id===id); if(!c || c.state!=='none') return;
+  if (c.approval){ c.state='pending'; toast(`Join request sent to ${c.name} — they’ll review it.`); }
+  else { c.state='member'; toast(`Joined ${c.name} — welcome in.`); }
+  refreshCircleUI();
+}
+function refreshCircleUI(){
+  if (circle.mode==='detail') renderCircleDetail(circle.id); else renderCircleDirectory();
+  if (document.getElementById('rec-circles')) renderRecommended();
+}
+function openCircle(id){
+  circle.mode='detail'; circle.id=id; circle.topic='all';
+  renderCircleDetail(id);
+  document.querySelector('#screen-circle .scroll').scrollTo({top:0, behavior:'smooth'});
+}
+
+function detailTopics(c){
+  if (c.topics.includes('all')) return CATS;
+  return [{id:'all', label:'All'}, ...CATS.filter(x=>c.topics.includes(x.id))];
+}
+function renderCircleDetail(id){
+  const c = CIRCLES.find(x=>x.id===id);
+  document.getElementById('circle-back').style.display='flex';
+  document.getElementById('circle-title').textContent = c.name;
+  const tabs = detailTopics(c);
+  const cat = document.getElementById('cattabs');
+  if (tabs.length > 1){
+    cat.style.display='flex';
+    cat.innerHTML = tabs.map(t=>`<button class="${circle.topic===t.id?'on':''}" onclick="setTopic('${t.id}')">${t.label}</button>`).join('');
+  } else cat.style.display='none';
+
+  document.getElementById('circle-root').innerHTML = `
+    <div class="matchwrap" style="padding-top:6px;">
+      <div class="circle-hero">
+        <div class="ch-ic">◎</div>
+        <div class="ch-txt">
+          <div class="eyebrow">Learning circle</div>
+          <h2 class="disp">${c.name}</h2>
+          <p>${c.tagline}</p>
+        </div>
+        ${ c.state==='member'
+          ? `<button class="joinbtn" onclick="toast('You’re a member of ${c.name}')">Joined</button>`
+          : c.state==='pending'
+          ? `<button class="joinbtn pending" disabled>Requested ✓</button>`
+          : `<button class="joinbtn" onclick="requestJoin('${c.id}')">${c.approval?'Request to join':'Join'}</button>` }
+      </div>
+
+      <div class="members-row">
+        <div class="mr-avatars">${MEMBERS.map(m=>`<img src="${m.a}" title="${m.n}" />`).join('')}</div>
+        <span class="mr-count">${fmtNum(c.members)} members · ${c.online} online now</span>
+      </div>
+
+      <p class="lead" style="margin:16px 0 12px;">${ c.state==='member'
+        ? 'Everything happens in the open here. Post your work, get honest notes from the whole circle underneath, and message anyone directly to ask how they did it.'
+        : 'Join to post your work, get notes from everyone underneath, and message any member directly to ask how they did it.' }</p>
+
+      <div id="circle-feed"></div>
+    </div>`;
+  renderCircleFeed(c);
+}
+
+function setTopic(id){
+  circle.topic = id;
+  renderCircleDetail(circle.id);
+  document.querySelector('#screen-circle .scroll').scrollTo({top:0, behavior:'smooth'});
+}
+
+function ensureComments(w, seed){
+  if (w.comments && w.comments.length) return;
+  const times = ['1h ago','3h ago','1d ago'];
+  w.comments = [0,1,2].map(i=>{
+    const m = MEMBERS[(seed + i*3) % MEMBERS.length];
+    return { a:m.a, n:m.n, t:COMMENT_POOL[(seed + i*2) % COMMENT_POOL.length], w:times[i] };
+  });
+}
+
+function renderCircleFeed(c){
+  const host = document.getElementById('circle-feed');
+  const posts = [];
+  BROWSE.forEach(cid=>{
+    if (!(c.topics.includes('all') || c.topics.includes(CAT_OF[cid]))) return;
+    if (circle.topic!=='all' && CAT_OF[cid]!==circle.topic) return;
+    CREATORS[cid].works.slice(0,2).forEach((w,wi)=>posts.push({cid, wi}));
+  });
+  if (!posts.length){ host.innerHTML = `<div class="card" style="padding:30px;text-align:center;color:var(--muted)">No posts here yet — be the first to share your work.</div>`; return; }
+  host.innerHTML = posts.map(({cid,wi}, idx)=>{
+    const cc = CREATORS[cid], w = cc.works[wi];
+    ensureComments(w, idx);
+    const shown = w.comments.slice(0,2);
+    const first = cc.name.split(' ')[0];
+    return `<div class="card cpost">
+      <div class="cardbody">
+        <div class="creator-row" onclick="openProfile('${cid}')">
+          <img class="avatar" src="${cc.avatar}" />
+          <div>
+            <div class="name-line">${cc.name} <span class="verified">✓</span> <span class="city">· ${cc.age}, ${cc.location}</span></div>
+            <div class="role-sub">${cc.role} · posted in ${c.name}</div>
+          </div>
+        </div>
+        <h3 class="disp">${w.title}</h3>
+        <p class="work-desc">${w.desc}</p>
+        <div class="tags"><span class="tag">${w.medium}</span>${cc.tags.slice(0,2).map(t=>`<span class="tag amber">${t}</span>`).join('')}</div>
+      </div>
+      <div class="work-media" onclick="openWork('${cid}',${wi})">
+        <img class="work-img" src="${IMG(w.seed)}" />
+        <span class="badge">${w.audio?'♪ '+w.medium:w.medium}</span>
+        ${w.audio?'<div class="playbtn">♪</div>':''}
+      </div>
+      <div class="cardbody">
+        <div class="discuss">
+          ${shown.map(cm=>`<div class="dc-row"><img src="${cm.a}" /><div><span class="dc-name">${cm.n}</span><span class="dc-text">${cm.t}</span></div></div>`).join('')}
+          <button class="viewall" onclick="openComments('${cid}',${wi})">${w.comments.length>shown.length?`View all ${w.comments.length} comments`:'Add a comment'}</button>
+        </div>
+        <div class="actions">
+          <button class="iact grow" data-key="${cid}:${wi}" onclick="appreciate(this,'${cid}',${wi})">
+            <span class="heartic">♡</span><span class="acount">${w.appr}</span> Appreciate
+          </button>
+          <button class="iact" onclick="openComments('${cid}',${wi})"><span class="heartic">✎</span>Comment</button>
+          <button class="dmbtn" onclick="openDM('${cid}')">Ask ${first}</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+renderDiscTabs();
+renderRecommended();
+renderFeed();
+initCircle();
+seedChat('david');
+</script>
+</body>
+</html>
